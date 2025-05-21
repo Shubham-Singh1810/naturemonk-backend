@@ -293,7 +293,7 @@ userController.get("/details/:id", auth, async (req, res) => {
   }
 });
 
-userController.post("/list", auth, async (req, res) => {
+userController.post("/list",  async (req, res) => {
   try {
     const {
       searchKey = "",
@@ -306,7 +306,7 @@ userController.post("/list", auth, async (req, res) => {
 
     const query = {};
     if (status) query.status = status;
-    if (searchKey) query.name = { $regex: searchKey, $options: "i" };
+    if (searchKey) query.firstName = { $regex: searchKey, $options: "i" };
 
     // Construct sorting object
     const sortField = sortByField || "createdAt";
@@ -747,5 +747,26 @@ userController.post("/remove-all-from-cart/:id", auth, async (req, res) => {
   }
 });
 
-
+userController.delete("/delete/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findById(id);
+    if (!user) {
+      return sendResponse(res, 404, "Failed", {
+        message: "User not found",
+        statusCode:400
+      });
+    }
+    await User.findByIdAndDelete(id);
+    sendResponse(res, 200, "Success", {
+      message: "User deleted successfully!",
+      statusCode:200
+    });
+  } catch (error) {
+    console.error(error);
+    sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+    });
+  }
+});
 module.exports = userController;
