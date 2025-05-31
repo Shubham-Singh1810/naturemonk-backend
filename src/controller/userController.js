@@ -345,7 +345,7 @@ userController.post("/list",  async (req, res) => {
   }
 });
 
-userController.post("/add-to-cart/:id", auth, async (req, res) => {
+userController.post("/add-to-cart/:id",  async (req, res) => {
   try {
     const { id: productId } = req.params;
     const { userId: currentUserId } = req.body;
@@ -353,6 +353,7 @@ userController.post("/add-to-cart/:id", auth, async (req, res) => {
     if (!productId || !currentUserId) {
       return sendResponse(res, 422, "Failed", {
         message: "Missing productId or userId!",
+        statusCode:"422"
       });
     }
 
@@ -360,6 +361,7 @@ userController.post("/add-to-cart/:id", auth, async (req, res) => {
     if (!product) {
       return sendResponse(res, 400, "Failed", {
         message: "Product not found!",
+        statusCode:"400"
       });
     }
 
@@ -367,6 +369,7 @@ userController.post("/add-to-cart/:id", auth, async (req, res) => {
     if (!user) {
       return sendResponse(res, 400, "Failed", {
         message: "User not found!",
+        statusCode:"400"
       });
     }
 
@@ -392,6 +395,7 @@ userController.post("/add-to-cart/:id", auth, async (req, res) => {
           message: `Only ${
             product.stockQuantity - currentQuantity
           } item(s) left in stock for this product.`,
+          statusCode:"400"
         });
       }
 
@@ -402,11 +406,13 @@ userController.post("/add-to-cart/:id", auth, async (req, res) => {
         },
       };
       message = "Item quantity incremented successfully";
+      
     } else {
       // If new product being added, make sure there's at least 1 in stock
       if (product.stockQuantity < 1) {
         return sendResponse(res, 400, "Failed", {
           message: "This product is currently out of stock.",
+          statusCode:"400"
         });
       }
 
@@ -418,7 +424,7 @@ userController.post("/add-to-cart/:id", auth, async (req, res) => {
 
     await User.findByIdAndUpdate(currentUserId, updateQuery, { new: true });
 
-    sendResponse(res, 200, "Success", { message });
+    sendResponse(res, 200, "Success", { message, statusCode:"200" });
   } catch (error) {
     console.log(error);
     sendResponse(res, 500, "Failed", {

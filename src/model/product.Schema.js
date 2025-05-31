@@ -162,6 +162,7 @@ const productSchema = mongoose.Schema({
     type: Boolean,
     default: true,
   },
+  productApperence:{type: [String]},
 });
 
 productSchema.plugin(timestamps);

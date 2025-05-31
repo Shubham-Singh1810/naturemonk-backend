@@ -151,6 +151,7 @@ categoryController.delete("/delete/:id", async (req, res) => {
     if (!category) {
       return sendResponse(res, 404, "Failed", {
         message: "Category not found",
+        statusCode:"404"
       });
     }
     const imageUrl = category.image;
@@ -168,11 +169,13 @@ categoryController.delete("/delete/:id", async (req, res) => {
     await Category.findByIdAndDelete(id);
     sendResponse(res, 200, "Success", {
       message: "Category and associated image deleted successfully!",
+      statusCode:"200"
     });
   } catch (error) {
     console.error(error);
     sendResponse(res, 500, "Failed", {
       message: error.message || "Internal server error",
+      statusCode:"500"
     });
   }
 });
