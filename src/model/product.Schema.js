@@ -47,6 +47,12 @@ const productSchema = mongoose.Schema({
   discountedPrice: {
     type: Number,
   },
+  saleStartDate: {
+    type: Date,
+  },
+  saleEndDate: {
+    type: Date,
+  },
   offerPrice: {
     type: Number,
   },
@@ -58,17 +64,6 @@ const productSchema = mongoose.Schema({
   },
   numberOfPieces: {
     type: Number,
-  },
-
-  currency: {
-    type: String,
-  },
-
-  saleStartDate: {
-    type: Date,
-  },
-  saleEndDate: {
-    type: Date,
   },
   itemWeight: {
     type: Number,
@@ -162,7 +157,12 @@ const productSchema = mongoose.Schema({
     type: Boolean,
     default: true,
   },
-  productApperence:{type: [String]},
+   productApperence: {
+    type: String,
+  },
+  rating: {
+    type: String,
+  },
 });
 
 productSchema.plugin(timestamps);
