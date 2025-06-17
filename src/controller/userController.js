@@ -4,9 +4,12 @@ require("dotenv").config();
 const User = require("../model/user.Schema");
 const Product = require("../model/product.Schema");
 const Category = require("../model/category.Schema");
+const ComboProduct = require("../model/comboProduct.Schema");
 const SubCategory = require("../model/subCategory.Schema");
 const userController = express.Router();
+const Booking = require("../model/booking.Schema");
 const axios = require("axios");
+const moment = require("moment");
 require("dotenv").config();
 const jwt = require("jsonwebtoken");
 const cloudinary = require("../utils/cloudinary");
@@ -771,6 +774,96 @@ userController.delete("/delete/:id", async (req, res) => {
     console.error(error);
     sendResponse(res, 500, "Failed", {
       message: error.message || "Internal server error",
+    });
+  }
+});
+
+userController.get("/dashboard-details", async (req, res) => {
+  try {
+    const [
+  totalUser,
+  activeUser,
+  inactiveUser,
+  totalBooking,
+  activeBooking,
+  bookingCompleted,
+  totalProduct,
+  singleProduct,
+  comboProduct,
+] = await Promise.all([
+  User.countDocuments({}),
+  User.countDocuments({ profileStatus: "completed" }),
+  User.countDocuments({ profileStatus: "incompleted" }),
+  Booking.countDocuments({}),
+  Booking.countDocuments({ status: { $in: ["orderPlaced", "orderPacked", "outForDelivery"]}}),
+  Booking.countDocuments({ status: "completed" }),
+  (async () => {
+    const [productCount, comboProductCount] = await Promise.all([
+      Product.countDocuments({}),
+      ComboProduct.countDocuments({}),
+    ]);
+    return productCount + comboProductCount;
+  })(),
+  Product.countDocuments({}),
+  ComboProduct.countDocuments({}),
+]);
+
+
+    // **Last 15 Days Booking Count Logic**
+    const last15Days = await Booking.aggregate([
+      {
+        $match: {
+          createdAt: {
+            $gte: moment().subtract(15, "days").startOf("day").toDate(),
+          },
+        },
+      },
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+          noOfBookings: { $sum: 1 },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]);
+
+    let bookingsLast15Days = [];
+    for (let i = 14; i >= 0; i--) {
+      let dateObj = moment().subtract(i, "days");
+      let formattedDate = dateObj.format("Do MMM"); // "1st Jan" format
+      let mongoDate = dateObj.format("YYYY-MM-DD"); // MongoDB ke format ke liye
+
+      let bookingData = last15Days.find((b) => b._id === mongoDate); // Compare in same format
+
+      bookingsLast15Days.push({
+        date: formattedDate, // "1st Jan"
+        noOfBookings: bookingData ? bookingData.noOfBookings : 0,
+        mongoDate: mongoDate,
+      });
+    }
+    sendResponse(res, 200, "Success", {
+      message: "Dashboard details retrieved successfully",
+      data: {
+        users: { totalUser, activeUser, inactiveUser },
+        bookings: {
+          totalBooking,
+          activeBooking,
+          bookingCompleted,
+        },
+        products: {
+          totalProduct,
+          singleProduct,
+          comboProduct,
+        },
+        last15DaysBookings: bookingsLast15Days, // Reverse for ascending order
+      },
+      statusCode: 200,
+    });
+  } catch (error) {
+    console.error(error);
+    sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+      statusCode: 500,
     });
   }
 });
