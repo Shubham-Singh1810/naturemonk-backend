@@ -7,6 +7,10 @@ const productSchema = mongoose.Schema({
     type: String,
     required: true,
   },
+   slug: {
+    type: String,
+    required: true,
+  },
   tags: {
     type: [String],
   },
@@ -134,6 +138,10 @@ const productSchema = mongoose.Schema({
     type: [String],
   },
   productVideo: {
+    type: String,
+  },
+
+  productVideoUrl: {
     type: String,
   },
 

@@ -11,6 +11,9 @@ const categorySchema = mongoose.Schema({
     type: Boolean,
     default: true,
   },
+  tax: {
+    type: String,
+  },
   image: {
     type: String,
     required: true,
