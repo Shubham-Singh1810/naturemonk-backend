@@ -38,7 +38,7 @@ productController.post("/list", async (req, res) => {
       searchKey = "",
       status,
       pageNo = 1,
-      pageCount = 10,
+      pageCount = 100,
       sortByField,
       sortByOrder,
     } = req.body;
