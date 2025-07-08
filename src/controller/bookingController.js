@@ -13,9 +13,18 @@ const path = require("path");
 
 bookingController.post("/create", async (req, res) => {
   try {
-    const { userId, totalAmount, product,
-       bookingQuantity, bookingPrice, modeOfPayment,
-         paymentId, signature, addressId, status  } = req.body;
+    const {
+      userId,
+      totalAmount,
+      product,
+      modeOfPayment,
+      paymentId,
+      signature,
+      address,
+      comboProduct,
+      variantProduct,
+      deliveryCharge
+    } = req.body;
 
     // Validate required fields
     if (!userId) {
@@ -26,16 +35,16 @@ bookingController.post("/create", async (req, res) => {
     }
 
     const bookingData = {
-      userId,
       totalAmount,
-      product,
-      bookingQuantity,
-      bookingPrice,
+      signature,
       modeOfPayment,
       paymentId,
-      signature,
-      addressId,
-      status,
+      product,
+      userId,
+      address,
+      comboProduct,
+      variantProduct,
+      deliveryCharge
     };
 
     const bookingCreated = await Booking.create(bookingData);
@@ -76,14 +85,24 @@ bookingController.post("/list", async (req, res) => {
 
     // Fetch the booking list
     const bookingList = await Booking.find(query)
-      .populate("userId", "firstName lastName")
-      .populate("addressId")
+      .populate({
+        path: "userId",
+        
+      })
       .sort(sortOption)
       .limit(parseInt(pageCount))
       .skip(parseInt(pageNo - 1) * parseInt(pageCount))
       .populate({
         path: "product.productId",
         select: "name description productHeroImage",
+      })
+      .populate({
+        path: "comboProduct.comboProductId",
+        
+      })
+      .populate({
+        path: "variantProduct.productId",
+        
       });
 
     const totalCount = await Booking.countDocuments(query);
@@ -154,13 +173,16 @@ bookingController.post("/list", async (req, res) => {
   }
 });
 
-
-bookingController.get("/details/:userId", async (req, res) => {
+bookingController.get("/my-booking/:userId", async (req, res) => {
   try {
     const userId = req.params.userId;
     const booking = await Booking.find({ userId: userId })
       .populate("product.productId")
-      .populate("userId");
+      .populate("userId")
+      .populate({
+        path: "comboProduct.comboProductId",
+      })
+      .populate("variantProduct.productId");
 
     if (booking.length > 0) {
       return sendResponse(res, 200, "Success", {
@@ -182,76 +204,69 @@ bookingController.get("/details/:userId", async (req, res) => {
   }
 });
 
-bookingController.put("/update",async (req, res) => {
-    try {
-      const id = req.body.id;
-      const venderData = await Vender.findById(id);
-      if (!venderData) {
-        return sendResponse(res, 404, "Failed", {
-          message: "Vender not found",
-        });
-      }
+bookingController.get("/details/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const booking = await Booking.findOne({ _id: id })
+      .populate({
+        path: "userId",
+        
+      })
+      .populate("product.productId")
+      .populate({
+        path: "comboProduct.comboProductId",
+        
+      })
+      .populate("variantProduct.productId");
 
-      let updateData = { ...req.body }
-      const updatedUserData = await Vender.findByIdAndUpdate(id, updateData, {
-        new: true,
-      });
-      if(req.body.profileStatus=="reUploaded"){
-        sendNotification({
-          icon:updatedUserData.profilePic,
-          title:`${updatedUserData.firstName} has re-uploaded the details`,
-          subTitle:`${updatedUserData.firstName} has re-uploaded the details`,
-          notifyUserId:"Admin",
-          category:"Vender",
-          subCategory:"Profile update",
-          notifyUser:"Admin",
-        }, req.io)
-      }
-         if(req.body.profileStatus=="rejected"){
-                sendNotification({
-                  icon:updatedUserData.profilePic,
-                  title:`${updatedUserData.firstName} your details has been rejected`,
-                  subTitle:`${updatedUserData.firstName} please go through the details once more`,
-                  notifyUserId:updatedUserData._id,
-                  category:"Vender",
-                  subCategory:"Profile update",
-                  notifyUser:"Vender",
-                }, req.io)
-              }
-      if(req.body.profileStatus=="approved"){
-        sendNotification({
-          icon:updatedUserData.profilePic,
-          title:`${updatedUserData.firstName} your profile has been approved`,
-          subTitle:`${updatedUserData.firstName} congratulations!! your profile has been approved`,
-          notifyUserId:updatedUserData._id,
-          category:"Vender",
-          subCategory:"Profile update",
-          notifyUser:"Vender",
-        }, req.io)
-      }
-      if(req.body.profileStatus=="storeDetailsCompleted"){
-        sendNotification({
-          icon:updatedUserData.profilePic,
-          title:`${updatedUserData.firstName} your storeDetails has been Completed`,
-          subTitle:`${updatedUserData.firstName} congratulations!! your storeDetails has been Completed`,
-          notifyUserId:updatedUserData._id,
-          category:"Vender",
-          subCategory:"Profile update",
-          notifyUser:"Vender",
-        }, req.io)
-      }
-      sendResponse(res, 200, "Success", {
-        message: "Vendor updated successfully!",
-        data: updatedUserData,
+    if (booking) {
+      return sendResponse(res, 200, "Success", {
+        message: "Booking details fetched successfully",
+        data: booking,
         statusCode: 200,
       });
-    } catch (error) {
-      console.error(error);
-      sendResponse(res, 500, "Failed", {
-        message: error.message || "Internal server error.",
+    } else {
+      return sendResponse(res, 404, "Failed", {
+        message: "No bookings found",
+        statusCode: 404,
       });
     }
+  } catch (error) {
+    return sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error.",
+      statusCode: 500,
+    });
   }
-);
+});
+
+bookingController.put("/update", async (req, res) => {
+  try {
+    const id = req.body._id;
+    const bookingDetails = await Booking.findById(id);
+    if (!bookingDetails) {
+      return sendResponse(res, 404, "Failed", {
+        message: "Order not found",
+        statusCode: 403,
+      });
+    }
+    const updateOrder = await Booking.findByIdAndUpdate(
+      id,
+      req.body,
+      {
+        new: true, // Return the updated document
+      }
+    );
+    sendResponse(res, 200, "Success", {
+      message: "Booking status update successfully",
+      data: updateOrder,
+      statusCode: 200,
+    });
+  } catch (error) {
+    sendResponse(res, 500, "Failed", {
+      message: error.message || "Internal server error",
+      statusCode: 500,
+    });
+  }
+});
 
 module.exports = bookingController;
