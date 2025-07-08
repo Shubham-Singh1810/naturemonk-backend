@@ -24,8 +24,12 @@ const supportSchema = mongoose.Schema({
   supportEmail: {
     type: String,
   },
-
-
+  minimumFreeOrderAmount:{
+    type:String
+  },
+  deliveryCharge:{
+    type:Number
+  }
 });
 
 supportSchema.plugin(timestamps);

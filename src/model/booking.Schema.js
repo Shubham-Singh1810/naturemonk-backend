@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 const timestamps = require("mongoose-timestamp");
-
+const { type } = require("os");
 const bookingSchema = mongoose.Schema({
   totalAmount: {
     type: String,
@@ -8,13 +8,11 @@ const bookingSchema = mongoose.Schema({
   status: {
     type: String,
     default: "orderPlaced",
-    enum: ["orderPlaced", "orderPacked", "outForDelivery", "completed", "cancelled"],
+    enum: ["orderPlaced",  "orderPacked", "outForDelivery", "completed", "cancelled"],
   },
   signature: {
     type: String,
-    require: true,
   },
-
   modeOfPayment: {
     type: String,
     enum: ["COD", "Online"],
@@ -27,7 +25,22 @@ const bookingSchema = mongoose.Schema({
       productId: { type: String, ref: "Product" },
       quantity: { type: Number },
       totalPrice: { type: Number },
-      productHeroImage: { type: String }
+      
+    },
+  ],
+   comboProduct: [
+    {
+      comboProductId: { type: String, ref: "ComboProduct" },
+      quantity: { type: Number },
+      totalPrice: { type: Number },
+    },
+  ],
+   variantProduct: [
+    {
+      productId: { type: String, ref: "Product" },
+      variantId:{type: String},
+      quantity: { type: Number },
+      totalPrice: { type: Number },
     },
   ],
   userId: {
@@ -35,10 +48,19 @@ const bookingSchema = mongoose.Schema({
     ref: "User",
     required: true,
   },
-  addressId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Address",
-    required: true,
+  deliveryCharge:{
+    type:String
+  },
+  address: {
+    fullName: { type: String, required: true },
+    phone: { type: String, required: true },
+    alternatePhone: { type: String },
+    landmark: { type: String },
+    area: { type: String },
+    city: { type: String, required: true },
+    state: { type: String, required: true },
+    pincode: { type: String, required: true },
+    country: { type: String, required: true },
   },
 });
 
